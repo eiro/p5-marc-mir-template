@@ -1,7 +1,7 @@
 package MIR::Template;
 use Modern::Perl;
 
-sub _control {
+sub _data_control {
     my $k = shift;
     sub {
         my ( $out, $content ) = @_;
@@ -10,7 +10,7 @@ sub _control {
     }
 }
 
-sub _data {
+sub _data_data {
     my ( $field, $tag ) = @_;
     sub {
         my ( $out, $content ) = @_;
@@ -18,17 +18,16 @@ sub _data {
     }
 }
 
-
 sub new {
     my ( $pkg, $spec ) = @_;
     my %template;
     while ( my @pair = each %$spec ) {
         my ( $k, $v ) = @pair;
         given ( ref $v ) {
-            when ('') { $template{ $v } = _control $k }
+            when ('') { $template{data}{ $v } = _data_control $k }
             when ('HASH') {
                 while ( my ( $subk, $subv ) = each %$v ) {
-                    $template{ $subv } = _data $k, $subk;
+                    $template{data}{ $subv } = _data_data $k, $subk;
                 }
             }
             when ('ARRAY') {
@@ -40,12 +39,13 @@ sub new {
     bless \%template, __PACKAGE__;
 }
 
-sub mir {
+sub data {
     my ( $template, $source ) = @_;
+    my $t = $$template{data};
     my $out = {};
     while ( my ( $k, $v ) = each %$source ) {
-        my $t = $$template{ $k } or next;
-        $t->( $out, $v );
+        my $cb = $$t{ $k } or next;
+        $cb->( $out, $v );
     }
     $out
 }
@@ -74,6 +74,6 @@ my $expected = YAML::Load << '';
     - [300, [ [a, "i can haz title"], [b, "also subs"]       ]]
 
 my $template = MIR::Template->new( $spec );
-my $out  = $template->mir( $data );
+my $out  = $template->data( $data );
 say YAML::Dump $out;
 
