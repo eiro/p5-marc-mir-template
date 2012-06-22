@@ -2,6 +2,8 @@ package MARC::MIR::Template;
 use Modern::Perl;
 use YAML ();
 
+# ABSTRACT: templating system for marc records
+
 sub _data_control {
     my $k = shift;
     sub {
