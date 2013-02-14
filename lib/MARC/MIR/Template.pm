@@ -1,9 +1,12 @@
 package MARC::MIR::Template;
 use Modern::Perl;
 use YAML ();
-
 sub FOR_MIR  { 0 }
 sub FOR_DATA { 1 }
+sub OPT      { 2 }
+
+our $DEBUG   = 0;
+our $VERSION = '0.1';
 
 # ABSTRACT: templating system for marc records
 
@@ -55,7 +58,7 @@ sub _data_mvalued {
 }
 
 sub new {
-    my ( $pkg, $spec ) = @_;
+    my ( $pkg, $spec, $options ) = @_;
     my $template = [ $spec ];
     while ( my ( $k, $v ) = each %$spec ) {
         given ( ref $v ) {
@@ -66,8 +69,17 @@ sub new {
                 $$template[FOR_DATA]{ $mvalued } = _data_mvalued $k, $fieldspec;
             }
         }
-    }
+    };
+    $template->[OPT] = $options || {};
     bless $template, __PACKAGE__;
+}
+
+sub debug {
+    my $self = shift;
+    for ($self->[OPT]{debug}) {
+        @_ and $_ = shift;
+        return $_;
+    }
 }
 
 sub data {
@@ -111,8 +123,9 @@ sub _mir_hash {
     my ( $data, $spec, $subfields ) = @_;
     for my $s ( @$subfields ) {
         my ( $tag, $v ) = @$s;
-        my $key = $$spec{ $tag } || die "can't manage $tag";
-        _set_or_push_value $data, $key, $v;
+        my $key = $$spec{ $tag };
+        if ( defined $key ) { _set_or_push_value $data, $key, $v }
+        else { $DEBUG && warn "can't manage $tag" }
     }
 }
 
@@ -123,7 +136,7 @@ sub mir {
     for (@$fields) {
         my ($tag,$v,$ind) = @$_;
         my $spec = $$tmpl{ $tag } or do {
-            say STDERR "unsuported,$tag";
+            say STDERR "unsuported,$tag" if $template->debug;
             next;
         };
         if ( my $ref = ref $spec ) {
