@@ -1,5 +1,6 @@
 package MARC::MIR::Template;
 use Modern::Perl;
+no warnings 'experimental';
 use YAML ();
 sub FOR_MIR  { 0 }
 sub FOR_DATA { 1 }
