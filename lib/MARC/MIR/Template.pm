@@ -11,6 +11,43 @@ our $VERSION = '0.1';
 
 # ABSTRACT: templating system for marc records
 
+=head1 SYNOPSIS
+
+from marc records to modern data formats (YAML, JSON, ...) without a single
+line of code.
+
+=head1 KNOWN BUGS
+
+=head2 Harvesting from multiple fields
+
+when a single key can be found in multiple subfields, it only works if these
+subfields are in the same field (see C<t/02_take_from_multiple_places.t>).
+
+simple work around:
+
+    200: { a: title, b: title }
+    100: { a: ya_title }
+
+then 
+
+    map { @$_ =
+            ( @$_
+            , @{ delete $$record{ya_title}} )
+    } $$record{title}
+
+=head1 TODO
+
+Dear librarians this todolist will not be treated as long as we don't know what
+*yoouu* want to do with indicators.
+
+    * write documentation
+    * improve and fix de test suite
+    * close known bugs 
+
+=item
+
+=cut
+
 sub _data_control {
     my $k = shift;
     sub {
